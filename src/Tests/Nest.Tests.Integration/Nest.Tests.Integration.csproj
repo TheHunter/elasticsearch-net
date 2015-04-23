@@ -238,6 +238,9 @@
     <Compile Include="Search\SearchTypeTests\SearchTypeScanTests.cs" />
     <Compile Include="Search\SearchTypeTests\SearchTypeCountTests.cs" />
     <Compile Include="Search\SearchTypeTests\SearchTypeTests.cs" />
+    <Compile Include="Search\SearchWithPolymorphismDocs.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Search\SubClassSupport\SubClassSupportTests.cs" />
     <Compile Include="Search\VersionTests.cs" />
     <Compile Include="Search\ExplainTests.cs" />
