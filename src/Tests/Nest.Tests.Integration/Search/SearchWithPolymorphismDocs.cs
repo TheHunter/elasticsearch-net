@@ -6,8 +6,10 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using Elasticsearch.Net.Serialization;
 using Nest.Resolvers;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NUnit.Framework;
 
@@ -64,7 +66,6 @@ namespace Nest.Tests.Integration.Search
             Assert.True(res1.Found);
 
             Assert.NotNull(response);
-            Assert.Equals(2, response.Documents.Count());
 
             // zero documents, if you see the [response.ServerError] you could understand the problem.
             Assert.AreEqual(2, response.Documents.Count());
@@ -98,7 +99,7 @@ namespace Nest.Tests.Integration.Search
                     zz.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
                     zz.ContractResolver = new DynamicContractResolver(settings);
                 });
-            return new ElasticClient(settings);
+            return new ElasticClient(settings, null, new MoreThanNestSerializer(settings));
         }
 
         /// <summary>
@@ -288,5 +289,36 @@ namespace Nest.Tests.Integration.Search
         public string University { get; set; }
     }
     #endregion
-    
+
+    #region (SOLUTION) custom NestSerializer
+    public class MoreThanNestSerializer
+        : NestSerializer
+    {
+        //private readonly JsonSerializerSettings serializationSettings;
+        //private readonly HashSet<Type> typesToInspect;
+
+        public MoreThanNestSerializer(IConnectionSettingsValues connectionSettings, IEnumerable<Type> typesToInspect = null)
+            : base(connectionSettings)
+        {
+            //this.typesToInspect = new HashSet<Type>(typesToInspect ?? Enumerable.Empty<Type>());
+        }
+
+        public override byte[] Serialize(object data, SerializationFormatting formatting = SerializationFormatting.Indented)
+        {
+            var format = formatting == SerializationFormatting.None ? Formatting.None : Formatting.Indented;
+
+            if (data == null)
+                return null;
+
+            var ret = base.Serialize(data, formatting);
+            
+            string originalJson = Encoding.UTF8.GetString(ret);
+            var jObject = JObject.Parse(originalJson);
+            if (jObject.Remove("$type"))
+                return Encoding.UTF8.GetBytes(jObject.ToString(format));
+
+            return ret;
+        }
+    }
+    #endregion
 }
